@@ -2,6 +2,8 @@ import 경기도 from './gyeonggi';
 import 전라북도 from './jeonbuk';
 import 전라남도 from './jeonnam';
 import 충청북도 from './chungbuk';
+import 대전광역시 from './daejeon';
+import 제주특별자치도 from './jeju';
 
 const scrappers = {
   서울특별시: '',
@@ -9,7 +11,7 @@ const scrappers = {
   대구광역시: '',
   인천광역시: '',
   광주광역시: '',
-  대전광역시: '',
+  대전광역시,
   세종특별자치시: '',
   경기도,
   강원도: '',
@@ -19,7 +21,7 @@ const scrappers = {
   전라북도,
   경상남도: '',
   경상북도: '',
-  제주특별자치도: '',
+  제주특별자치도,
 };
 
 export default scarappers;
