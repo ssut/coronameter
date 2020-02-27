@@ -19,6 +19,8 @@
   "homepage": "https://github.com/ssut/coronameter#readme",
   "devDependencies": {
     "@types/axios": "^0.14.0",
+    "@types/cheerio": "^0.22.16",
+    "@types/luxon": "^1.21.0",
     "@types/node": "^13.7.6",
     "@types/qs": "^6.9.1",
     "@types/tough-cookie": "^2.3.6",
@@ -29,6 +31,8 @@
   "dependencies": {
     "axios": "^0.19.2",
     "axios-cookiejar-support": "^0.5.1",
+    "cheerio": "^1.0.0-rc.3",
+    "luxon": "^1.22.0",
     "qs": "^6.9.1",
     "tough-cookie": "^3.0.1"
   }
