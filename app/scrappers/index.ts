@@ -1,3 +1,5 @@
+import bluebird from 'bluebird';
+
 import 경기도 from './gyeonggi';
 import 전라북도 from './jeonbuk';
 import 전라남도 from './jeonnam';
@@ -12,18 +14,20 @@ import 경상남도 from './gyeongnam';
 import 강원도 from './gangwon';
 import 부산광역시 from './busan';
 import 인천광역시 from './incheon';
+import 광주광역시 from './gwangju';
+import 충청남도 from './chungnam';
 
 const scrappers = {
   서울특별시,
   부산광역시,
   대구광역시,
   인천광역시,
-  광주광역시: '',
+  광주광역시,
   대전광역시,
   세종특별자치시,
   경기도,
   강원도,
-  충청남도: '',
+  충청남도,
   충청북도,
   전라남도,
   전라북도,
@@ -32,4 +36,12 @@ const scrappers = {
   제주특별자치도,
 };
 
-export default scarappers;
+export default scrappers;
+
+export const scrapAll = async (concurrency = 3) => {
+  return Object.fromEntries(await bluebird.map(Object.entries(scrappers), ([province, fn]) => bluebird.props([province, fn()]), { concurrency }));
+};
+
+if (require.main === module) {
+  scrapAll().then(console.info);
+}

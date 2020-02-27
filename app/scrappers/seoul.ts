@@ -5,7 +5,7 @@ import { DateTime } from 'luxon';
 
 export default async function () {
   const $ = await axios.get('http://www.seoul.go.kr/coronaV/coronaStatus.do').then(resp => cheerio.load(resp.data));
-  const updatedAt = $('#tab-cont1 > div > p').text().split('질병관리본부 \'')[1];
+  const updatedAt = $('.status-seoul > h4 span').text().replace(/(\(|\)|')/g, '');
 
   return {
     확진자: Number($('#tab-cont1 > div > div.status > div.status-seoul > div.cell.cell1 > div > p.counter').text()),

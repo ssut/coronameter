@@ -19,12 +19,14 @@
   "homepage": "https://github.com/ssut/coronameter#readme",
   "devDependencies": {
     "@types/axios": "^0.14.0",
+    "@types/bluebird": "^3.5.29",
     "@types/cheerio": "^0.22.16",
     "@types/fs-extra": "^8.1.0",
     "@types/luxon": "^1.21.0",
     "@types/mime-types": "^2.1.0",
     "@types/node": "^13.7.6",
     "@types/qs": "^6.9.1",
+    "@types/tesseract.js": "0.0.2",
     "@types/tough-cookie": "^2.3.6",
     "ts-node": "^8.6.2",
     "ts-node-dev": "^1.0.0-pre.44",
@@ -34,6 +36,7 @@
     "@google-cloud/vision": "^1.9.0",
     "axios": "^0.19.2",
     "axios-cookiejar-support": "^0.5.1",
+    "bluebird": "^3.7.2",
     "canvas": "^2.6.1",
     "cheerio": "^1.0.0-rc.3",
     "dotenv": "^8.2.0",
@@ -45,6 +48,7 @@
     "node-hwp": "0.1.0-alpha",
     "qs": "^6.9.1",
     "tempy": "^0.4.0",
+    "tesseract.js": "^2.0.2",
     "tough-cookie": "^3.0.1"
   }
 }

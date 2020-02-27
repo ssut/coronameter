@@ -14,7 +14,7 @@ import repl from 'repl';
 import { DateTime } from 'luxon';
 
 export default async function () {
-  const $list = await axios.get('https://www.chungbuk.go.kr/www/selectBbsNttList.do?bbsNo=3310&key=1560').then(resp => cheerio.load(resp.data));
+  const $list = await axios.get('https://www.chungbuk.go.kr/www/selectBbsNttList.do?key=1560&bbsNo=3310&integrDeptCode=&searchCnd=SJ&searchKrwd=%EB%B8%8C%EB%A6%AC%ED%95%91').then(resp => cheerio.load(resp.data));
   const target = $list($list('a[href^="./selectBbsNttView"]').get().find((x: any) => $list(x).text().includes('코로나19') && $list(x).text().includes('브리핑'))).attr('href');
 
   const jsessionid = /jsessionid\=(?<jsessionid>[-_.a-z0-9]+)\?key/ig.exec(target).groups['jsessionid'];
