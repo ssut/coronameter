@@ -6,6 +6,7 @@ import 대전광역시 from './daejeon';
 import 제주특별자치도 from './jeju';
 import 서울특별시 from './seoul';
 import 대구광역시 from './daegu';
+import 세종특별자치시 from './sejong';
 
 const scrappers = {
   서울특별시,
@@ -14,7 +15,7 @@ const scrappers = {
   인천광역시: '',
   광주광역시: '',
   대전광역시,
-  세종특별자치시: '',
+  세종특별자치시,
   경기도,
   강원도: '',
   충청남도: '',
