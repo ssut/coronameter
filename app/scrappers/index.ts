@@ -7,6 +7,7 @@ import 제주특별자치도 from './jeju';
 import 서울특별시 from './seoul';
 import 대구광역시 from './daegu';
 import 세종특별자치시 from './sejong';
+import 경상북도 from './gyeongbuk';
 
 const scrappers = {
   서울특별시,
@@ -23,7 +24,7 @@ const scrappers = {
   전라남도,
   전라북도,
   경상남도: '',
-  경상북도: '',
+  경상북도,
   제주특별자치도,
 };
 
