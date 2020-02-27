@@ -8,7 +8,6 @@ export default async function () {
   const $ = cheerio.load(resp.data);
 
   const updatedAt = $('#quick3 > div > div.dashBoard > div > div:nth-child(2)').text().trim().split(' : ').reverse()[0].trim().replace('오전', 'AM').replace('오후', 'PM');
-  console.info(updatedAt);
 
   return {
     확진자: Number($('#quick3 > div > div.dashBoard > div > ul:nth-child(3) > li:nth-child(4) > strong').text()),
