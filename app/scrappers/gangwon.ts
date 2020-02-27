@@ -35,7 +35,6 @@ export default async function () {
     ocr.execute(감염자, path.extname(감염자)).then(x => x.fullTextAnnotation.text),
     ocr.execute(기준, path.extname(기준)).then(x => x.fullTextAnnotation.text),
   ]);
-  console.info(기준Text);
 
   const { 확진자 } = /(?<확진자>[0-9]{1,})명/g.exec(감염자Text).groups;
   const {

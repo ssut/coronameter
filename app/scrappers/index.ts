@@ -10,10 +10,11 @@ import 세종특별자치시 from './sejong';
 import 경상북도 from './gyeongbuk';
 import 경상남도 from './gyeongnam';
 import 강원도 from './gangwon';
+import 부산광역시 from './busan';
 
 const scrappers = {
   서울특별시,
-  부산광역시: '',
+  부산광역시,
   대구광역시,
   인천광역시: '',
   광주광역시: '',
