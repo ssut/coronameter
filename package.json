@@ -1,0 +1,35 @@
+{
+  "name": "coronameter",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ssut/coronameter.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ssut/coronameter/issues"
+  },
+  "homepage": "https://github.com/ssut/coronameter#readme",
+  "devDependencies": {
+    "@types/axios": "^0.14.0",
+    "@types/node": "^13.7.6",
+    "@types/qs": "^6.9.1",
+    "@types/tough-cookie": "^2.3.6",
+    "ts-node": "^8.6.2",
+    "ts-node-dev": "^1.0.0-pre.44",
+    "typescript": "^3.8.2"
+  },
+  "dependencies": {
+    "axios": "^0.19.2",
+    "axios-cookiejar-support": "^0.5.1",
+    "qs": "^6.9.1",
+    "tough-cookie": "^3.0.1"
+  }
+}
