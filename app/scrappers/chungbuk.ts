@@ -11,6 +11,7 @@ import tempy from 'tempy';
 import { rejects } from 'assert';
 import parser from 'fast-xml-parser';
 import repl from 'repl';
+import { DateTime } from 'luxon';
 
 export default async function () {
   const $list = await axios.get('https://www.chungbuk.go.kr/www/selectBbsNttList.do?bbsNo=3310&key=1560').then(resp => cheerio.load(resp.data));
@@ -53,11 +54,23 @@ export default async function () {
 
   const parsed = parser.parse(doc.toHML(), {}, false);
 
-  const targetTable = parsed.HWPML.BODY.SECTION.P.reduce((all, x) => [...all, ...Object.keys(x).flatMap(key => x[key]).filter(x => !Array.isArray(x))], []).filter(x => x['TABLE'] !== undefined).find(x => JSON.stringify(x).includes('확진자의 접촉자')).TABLE;
+  const Ps = parsed.HWPML.BODY.SECTION.P as any[];
+  const all = Ps.reduce((all, x) => [...all, ...Object.keys(x).flatMap(key => x[key]).filter(x => !Array.isArray(x))], []);
+  const targetTable = all.filter(x => x['TABLE'] !== undefined).find(x => JSON.stringify(x).includes('확진자의 접촉자')).TABLE;
   const extractCellText = (cell: any) => String(cell.PARALIST?.P?.TEXT?.CHAR ?? '');
   const rows = targetTable.ROW as { CELL: any[] }[];
   const texts = rows.map(row => row.CELL.map(cell => extractCellText(cell))) as string[][];
 
+  const 기준 = all.find(x => {
+    const str = JSON.stringify(x);
+    return str.includes('월') && str.includes('일') && str.includes('기준');
+  });
+  const {
+    월,
+    일,
+    시,
+    분,
+  } = /(?<월>[0-9]{1,2})월 (?<일>[0-9]{1,2})일 (?<시>[0-9]{1,2}):(?<분>[0-9]{1,2})/g.exec(JSON.stringify(기준)).groups;
   const 누계 = texts.splice(texts.findIndex(text => text[0] === '누계'), 3);
 
   const info = {
@@ -66,6 +79,15 @@ export default async function () {
     퇴원자: Number(누계[1][3]) || 0,
     사망자: 0,
     자가격리: Number(누계[0][7]) || 0,
+
+    updatedAt: DateTime.local().set({
+      month: Number(월),
+      day: Number(일),
+      hour: Number(시),
+      minute: Number(분),
+      second: 0,
+      millisecond: 0,
+    }),
   } as ICoronaStats;
 
   return info;
