@@ -1,4 +1,7 @@
 import 경기도 from './gyeonggi';
+import 전라북도 from './jeonbuk';
+import 전라남도 from './jeonnam';
+import 충청북도 from './chungbuk';
 
 const scrappers = {
   서울특별시: '',
@@ -11,9 +14,9 @@ const scrappers = {
   경기도,
   강원도: '',
   충청남도: '',
-  충청북도: '',
-  전라남도: '',
-  전라북도: '',
+  충청북도,
+  전라남도,
+  전라북도,
   경상남도: '',
   경상북도: '',
   제주특별자치도: '',
