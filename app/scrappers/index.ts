@@ -9,6 +9,7 @@ import 대구광역시 from './daegu';
 import 세종특별자치시 from './sejong';
 import 경상북도 from './gyeongbuk';
 import 경상남도 from './gyeongnam';
+import 강원도 from './gangwon';
 
 const scrappers = {
   서울특별시,
@@ -19,7 +20,7 @@ const scrappers = {
   대전광역시,
   세종특별자치시,
   경기도,
-  강원도: '',
+  강원도,
   충청남도: '',
   충청북도,
   전라남도,

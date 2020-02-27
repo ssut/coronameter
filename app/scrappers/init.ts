@@ -1,3 +1,5 @@
+import 'dotenv/config';
+
 import axios from 'axios';
 import axiosCookieJarSupport from 'axios-cookiejar-support';
 import toughCookie from 'tough-cookie';
