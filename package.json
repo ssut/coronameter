@@ -20,6 +20,7 @@
   "devDependencies": {
     "@types/axios": "^0.14.0",
     "@types/cheerio": "^0.22.16",
+    "@types/fs-extra": "^8.1.0",
     "@types/luxon": "^1.21.0",
     "@types/node": "^13.7.6",
     "@types/qs": "^6.9.1",
@@ -32,8 +33,12 @@
     "axios": "^0.19.2",
     "axios-cookiejar-support": "^0.5.1",
     "cheerio": "^1.0.0-rc.3",
+    "fast-xml-parser": "^3.16.0",
+    "fs-extra": "^8.1.0",
     "luxon": "^1.22.0",
+    "node-hwp": "0.1.0-alpha",
     "qs": "^6.9.1",
+    "tempy": "^0.4.0",
     "tough-cookie": "^3.0.1"
   }
 }

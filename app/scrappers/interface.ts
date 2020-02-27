@@ -5,6 +5,7 @@ export interface ICoronaStats {
   입원환자: number;
   퇴원자: number;
   사망자: number;
+  자가격리?: number;
 
   updatedAt: DateTime;
 }
