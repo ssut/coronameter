@@ -4,9 +4,10 @@ import 전라남도 from './jeonnam';
 import 충청북도 from './chungbuk';
 import 대전광역시 from './daejeon';
 import 제주특별자치도 from './jeju';
+import 서울특별시 from './seoul';
 
 const scrappers = {
-  서울특별시: '',
+  서울특별시,
   부산광역시: '',
   대구광역시: '',
   인천광역시: '',
