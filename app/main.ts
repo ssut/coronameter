@@ -11,6 +11,7 @@ import { join } from 'path';
 import {
   Stat,
 } from './models';
+import Config from './config';
 
 declare module 'fastify' {
   interface FastifyInterface {
@@ -37,7 +38,7 @@ async function main() {
   //   }
   // });
 
-  instance.listen(3300);
+  instance.listen(Config.Port);
 }
 
 main();
