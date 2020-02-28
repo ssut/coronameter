@@ -15,7 +15,7 @@ export class Stat extends Model {
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
-  public static async getLatestStatsByProvinces() {
+  public static async getLatestStatsByProvinces(): Promise<Stat[]> {
     const stats = await sequelize.query(`SELECT * FROM corona.stats
     JOIN (
       SELECT id, province, "basedAt", RANK() over (PARTITION BY "basedAt" ORDER BY "basedAt" DESC) AS "rank" FROM corona.stats
@@ -26,7 +26,7 @@ export class Stat extends Model {
       mapToModel: true,
     });
 
-    return stats;
+    return stats as any;
   }
 
   public static async updateStats(province: string, stats: ICoronaStats) {
