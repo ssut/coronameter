@@ -12,6 +12,7 @@ import {
   Stat,
 } from './models';
 import Config from './config';
+import { initialize } from './common';
 
 declare module 'fastify' {
   interface FastifyInterface {
@@ -29,14 +30,7 @@ async function main() {
     controllersMask: /\.controller\./,
   });
 
-  await sequelize.authenticate();
-  await Stat.sync();
-
-  // scrapAll().then((stats) => {
-  //   for (const [province, stat] of Object.entries(stats)) {
-  //     Stat.updateStats(province, stat);
-  //   }
-  // });
+  await initialize();
 
   instance.listen(Config.Port);
 }

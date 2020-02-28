@@ -17,4 +17,15 @@ export default class Config {
       }),
     }),
   });
+
+  public static Redis = Object.freeze({
+    host: env.REDIS_HOST,
+    port: Number(env.REDIS_PORT) || 6379,
+    password: env.REDIS_PASSWORD,
+    db: Number(env.REDIS_DB) || 2,
+  });
+
+  public static Sentry = Object.freeze({
+    DSN: env.SENTRY_DSN!,
+  });
 }
