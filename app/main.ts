@@ -21,9 +21,18 @@ declare module 'fastify' {
 }
 
 async function main() {
-  const instance = fastify();
+  const instance = fastify({
+    logger: true,
+    trustProxy: ['127.0.0.0/16'],
+  });
 
+  instance.register(require('fastify-log'));
+  instance.register(require('fastify-sentry'), {
+    dsn: Config.Sentry.DSN,
+    attachStacktrace: true,
+  });
   instance.register(require('fastify-sensible'));
+  instance.register(require('fastify-cors'));
 
   instance.register(bootstrap, {
     controllersDirectory: join(__dirname, 'controllers'),
@@ -32,7 +41,13 @@ async function main() {
 
   await initialize();
 
-  instance.listen(Config.Port);
+  instance.listen(Config.Port, (err, address) => {
+    if (err) {
+      throw err;
+    }
+
+    instance.log.info(`server listening on ${address}`);
+  });
 }
 
 main();
