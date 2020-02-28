@@ -11,4 +11,11 @@ export default class StatHandler {
   public async getLastestStats() {
     return Stat.getLatestStatsByProvinces();
   }
+
+  @GET({
+    url: '/provinces',
+  })
+  public async getProvinces() {
+    return Stat.getDistinctProvinces();
+  }
 }

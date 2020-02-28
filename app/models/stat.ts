@@ -58,6 +58,12 @@ export class Stat extends Model {
     });
     return stat;
   }
+
+  public static async getDistinctProvinces() {
+    const results: any[] = await this.aggregate('province', 'DISTINCT', { plain: false });
+
+    return results?.map(({ DISTINCT }) => DISTINCT) as string[];
+  }
 }
 
 Stat.init({
