@@ -19,6 +19,7 @@ import 인천광역시 from './incheon';
 import 광주광역시 from './gwangju';
 import 충청남도 from './chungnam';
 import 울산광역시 from './ulsan';
+import { Severity, withScope, captureEvent } from '@sentry/node';
 
 const logger = debug('scrappers');
 
@@ -45,7 +46,7 @@ const scrappers = {
 export default scrappers;
 
 export const scrapAll = async (concurrency = 5) => {
-  return Object.fromEntries(
+  const results = Object.fromEntries(
     await bluebird.map(Object.entries(scrappers), async ([province, fn]) => {
       const logger = debug(`scrapper:${province}`);
 
@@ -60,6 +61,40 @@ export const scrapAll = async (concurrency = 5) => {
   ) as {
     [key in keyof typeof scrappers]: ICoronaStats;
   };
+
+  for (const [province, stat] of Object.entries(results)) {
+    let reason = '';
+    let level = Severity.Error;
+    const fingerprints = ['SCRAP'];
+
+    if (!stat) {
+      reason = '응답 결과 없음';
+      fingerprints.push('NO_RESPONSE');
+    } else if (!stat.updatedAt || !stat.updatedAt.isValid) {
+      reason = '날짜 정보 없음';
+      fingerprints.push('NO_UPDATED_AT');
+    } else if (isNaN(stat.확진자)) {
+      reason = '확진자수가 숫자가 아님';
+      fingerprints.push('CONFIRMED_IS_NAN');
+    } else if (Math.abs(stat.updatedAt.diffNow('day').days) >= 2) {
+      reason = '결과 날짜가 2일 이상 차이남';
+      fingerprints.push('OLD_INFO');
+    }
+
+    if (reason) {
+      withScope((scope) => {
+        scope.setFingerprint(fingerprints);
+        scope.setTag('province', province);
+
+        captureEvent({
+          message: `${province}: ${reason}`,
+          level,
+        });
+      });
+    }
+  }
+
+  return results;
 };
 
 if (require.main === module) {
