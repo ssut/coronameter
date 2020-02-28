@@ -5,7 +5,7 @@ import cheerio from 'cheerio';
 import { DateTime } from 'luxon';
 import { createOCRInstance } from '../utils/ocr';
 import tempy from 'tempy';
-import { createReadStream, createWriteStream } from 'fs-extra';
+import { createReadStream, createWriteStream, writeFileSync } from 'fs-extra';
 import * as path from 'path';
 import { createRequireFromPath } from 'module';
 import { crop } from '../utils/imageprocessing';
@@ -14,7 +14,7 @@ import { longStackTraces } from 'bluebird';
 
 export default async function () {
   const $ = await axios.get('https://www.gwangju.go.kr/corona/index.html').then(resp => cheerio.load(resp.data));
-  const imagePath = $($('img[src^="/corona"]').get().find(x => $(x).attr('src').includes('img.jpg'))).attr('src');
+  const imagePath = $($('img[src^="/corona"]').get().find(x => $(x).attr('usemap'))).attr('src');
   const imageUrl = 'https://www.gwangju.go.kr' + imagePath;
 
   const filename = tempy.file({ extension: path.extname(imageUrl).replace('.', '') });
@@ -30,6 +30,16 @@ export default async function () {
     imageResponse.data.pipe(stream);
   });
 
+  const ocr = createOCRInstance();
+  const fullOcrResult = await ocr.execute(filename ,path.extname(filename));
+
+  const 확진환자Annotation = fullOcrResult.textAnnotations.find(({ description }) => description === '확진환자');
+  const 확진자boundingRect = ocr.extractBoundingRect(확진환자Annotation);
+  const 격리해제자가격리Annotation = fullOcrResult.textAnnotations.find(({ description }) => description === '격리해제');
+  const 격리해제자가격리boundingRect = ocr.extractBoundingRect(격리해제자가격리Annotation);
+  const 격리병원Annotation = fullOcrResult.textAnnotations.find(({ description }) => description === '격리병원');
+  const 격리병원boundingRect = ocr.extractBoundingRect(격리병원Annotation);
+
   const [
     기준,
     확진자,
@@ -37,14 +47,15 @@ export default async function () {
     격리병원,
   ] = await Promise.all([
     crop(filename, 330, 50, 350, 60),
-    crop(filename, 255, 310, 150, 85, 100, 0.5),
-    crop(filename, 330, 400, 155, 75, 100),
-    crop(filename, 170, 415, 140, 50),
+    crop(filename, 확진자boundingRect.x - 50, 확진자boundingRect.y + 확진자boundingRect.height + 50, 확진자boundingRect.width + 55, 70, {
+      sharpen: true,
+      outputFormat: 'png',
+      custom: (sharp) => sharp.tint({ r: 255, g: 228, b: 0 }).grayscale().resize(Math.round((확진자boundingRect.width + 55) / 2), 35),
+    }),
+    crop(filename, 격리해제자가격리boundingRect.x - 20, 격리해제자가격리boundingRect.y - 10, 180, 90),
+    crop(filename, 격리병원boundingRect.x - 20, 격리병원boundingRect.y - 10, 140, 50),
   ]);
 
-  console.info(확진자, 기준);
-
-  const ocr = createOCRInstance();
   const [
     기준Text,
     확진자Text,

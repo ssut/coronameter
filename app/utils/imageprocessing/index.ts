@@ -1,25 +1,52 @@
+import * as _ from 'lodash';
 import * as path from 'path';
-import Clipper from 'image-clipper';
+import sharp from 'sharp';
 import tempy from 'tempy';
-import canvas from 'canvas';
 
-Clipper.configure('canvas', canvas);
+interface ICropOptions {
+  outputFormat?: 'preserve' | 'png' | 'jpg';
+  outputQuality?: number;
+  sharpen?: boolean;
+  custom?: (sharp: sharp.Sharp) => sharp.Sharp;
+}
 
-export const crop = (filename: string, x: number, y: number, width: number, height: number, quality = 100, multiplyBy = 1) => {
-  const targetFilename = tempy.file({ extension: path.extname(filename).replace('.', '') });
+export const crop = (filename: string, x: number, y: number, width: number, height: number, options: ICropOptions = {}) => {
+  const _options: ICropOptions = _.mergeWith({
+    outputFormat: 'preserve',
+    outputQuality: 100,
+    sharpen: false,
+    custom: null,
+  }, options);
 
-  return new Promise<string>((resolve) => {
-    Clipper(filename, function () {
-      let options = this
-        .crop(x, y, width, height)
-        .quality(quality);
-
-      if (multiplyBy !== 1) {
-        options.resize(width * multiplyBy, height * multiplyBy);
-      }
-
-      options
-        .toFile(targetFilename, () => resolve(targetFilename));
+  let processing = sharp(filename)
+    .extract({
+      left: x,
+      top: y,
+      width,
+      height,
     });
-  });
+
+  if (_options.sharpen) {
+    processing = processing.sharpen();
+  }
+
+  if (typeof _options.custom === 'function') {
+    processing = _options.custom(processing);
+  }
+
+  let extension = path.extname(filename).replace('.', '');
+  switch (_options.outputFormat) {
+    case 'png':
+      processing = processing.png();
+      extension = 'png';
+      break;
+
+    case 'jpg':
+      processing = processing.jpeg({ quality: _options.outputQuality });
+      extension = 'jpg';
+      break;
+  }
+
+  const targetFilename = tempy.file({ extension });
+  return processing.toFile(targetFilename).then(() => targetFilename);
 }

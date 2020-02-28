@@ -1,6 +1,10 @@
 const env = process.env;
 
 export default class Config {
+  public static Postgres = Object.freeze({
+    URL: env.POSTGRES_URL!,
+  });
+
   public static Google = Object.freeze({
     VisionAPI: Object.freeze({
       Credentials: Object.freeze({

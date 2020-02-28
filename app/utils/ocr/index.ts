@@ -14,7 +14,7 @@ export default class OCR {
     this.client2 = new Vision.v1.ImageAnnotatorClient({ credentials });
   }
 
-  private get pnggiftiffClient() {
+  private get giftiffClient() {
     return this.client1;
   }
 
@@ -24,10 +24,9 @@ export default class OCR {
 
   private getClientByExt(ext = '.jpg') {
     switch (ext.toLowerCase()) {
-      case '.png':
       case '.gif':
       case '.tiff':
-        return this.pnggiftiffClient;
+        return this.giftiffClient;
 
       default:
         return this.otherClient;
@@ -38,7 +37,7 @@ export default class OCR {
     const client = this.getClientByExt(ext);
 
     switch (client) {
-      case this.pnggiftiffClient: {
+      case this.giftiffClient: {
         const features = [{ type: 'DOCUMENT_TEXT_DETECTION' }];
         const requests = [
           {
@@ -63,6 +62,27 @@ export default class OCR {
 
       default:
     }
+  }
+
+  public extractBoundingRect(textAnnotation: any) {
+    const vertices = textAnnotation?.boundingPoly?.vertices ?? [];
+    const boundingRect = { x: -1, y: -1, width: -1, height: - 1 };
+    try {
+      const x = vertices.map(({ x }) => x);
+      const y = vertices.map(({ y }) => y);
+
+      const minX = Math.min(...x);
+      const minY = Math.min(...y);
+      const maxX = Math.max(...x);
+      const maxY = Math.max(...y);
+
+      boundingRect.x = minX;
+      boundingRect.y = minY;
+      boundingRect.width = maxX - minX;
+      boundingRect.height = maxY - minY;
+    } catch { }
+
+    return boundingRect;
   }
 }
 
