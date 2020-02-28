@@ -25,12 +25,17 @@ export default async function () {
     imageResponse.data.pipe(stream);
   });
 
+  const ocr = createOCRInstance();
+  const fullOcrResult = await ocr.execute(filename ,path.extname(filename));
+
+  const 기준Annotation = fullOcrResult.textAnnotations.find(({ description }) => description === '기준');
+  const 기준BoundingRect = ocr.extractBoundingRect(기준Annotation);
+
   const [감염자, 기준] = await Promise.all([
     crop(filename, 100, 265, 115, 90),
-    crop(filename, 430, 225, 170, 30),
+    crop(filename, 기준BoundingRect.x - 175, 기준BoundingRect.y - 10, 210, 35),
   ]);
 
-  const ocr = createOCRInstance();
   const [감염자Text, 기준Text] = await Promise.all([
     ocr.execute(감염자, path.extname(감염자)).then(x => x.fullTextAnnotation.text),
     ocr.execute(기준, path.extname(기준)).then(x => x.fullTextAnnotation.text),
