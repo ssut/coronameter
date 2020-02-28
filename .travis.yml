@@ -1,5 +1,5 @@
 before_script:
-  - echo -e "Host arc.airfly.io\n\tHostName arc.airfly.io\n\tUser ssut\n\tIdentityFile ~/.ssh/deploy_key\n" >> ~/.ssh/config
+  - echo -e "Host arc.airfly.io\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
 before_install:
   - openssl aes-256-cbc -K $encrypted_43473e271aae_key -iv $encrypted_43473e271aae_iv -in deploy_key.enc -out ~/.ssh/deploy_key -d
 script:
