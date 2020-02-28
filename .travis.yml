@@ -1,7 +1,13 @@
+language: node_js
+node_js:
+  - lts/*
+
 before_script:
   - echo -e "Host arc.airfly.io\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
 before_install:
   - openssl aes-256-cbc -K $encrypted_43473e271aae_key -iv $encrypted_43473e271aae_iv -in deploy_key.enc -out ~/.ssh/deploy_key -d
   - chmod 600 ~/.ssh/deploy_key
 script:
+  - npm i -D
+  - npx tsc --noEmit
   - ssh -i ~/.ssh/deploy_key ssut@arc.airfly.io /var/www/deploy-coronameter.sh
