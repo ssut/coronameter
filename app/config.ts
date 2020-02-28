@@ -1,6 +1,8 @@
 const env = process.env;
 
 export default class Config {
+  public static Port = Number(env.PORT!) || 3300;
+
   public static Postgres = Object.freeze({
     URL: env.POSTGRES_URL!,
   });

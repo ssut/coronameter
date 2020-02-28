@@ -22,7 +22,6 @@ async function main() {
   const instance = fastify();
 
   instance.register(require('fastify-sensible'));
-  console.info(__dirname);
 
   instance.register(bootstrap, {
     controllersDirectory: join(__dirname, 'controllers'),
@@ -32,11 +31,11 @@ async function main() {
   await sequelize.authenticate();
   await Stat.sync();
 
-  scrapAll().then((stats) => {
-    for (const [province, stat] of Object.entries(stats)) {
-      Stat.updateStats(province, stat);
-    }
-  });
+  // scrapAll().then((stats) => {
+  //   for (const [province, stat] of Object.entries(stats)) {
+  //     Stat.updateStats(province, stat);
+  //   }
+  // });
 
   instance.listen(3300);
 }

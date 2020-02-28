@@ -30,6 +30,10 @@ export class Stat extends Model {
   }
 
   public static async updateStats(province: string, stats: ICoronaStats) {
+    if (!stats?.updatedAt?.isValid) {
+      return null;
+    }
+
     // province & stats.updatedAt으로 같은 게 없는지 확인
     const { rows, count } = await this.findAndCountAll({
       where: {
