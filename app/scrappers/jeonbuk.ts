@@ -7,8 +7,8 @@ export default async function () {
   const resp = await axios.get('http://www.jeonbuk.go.kr/index.jeonbuk');
   const $ = cheerio.load(resp.data);
 
+  const stats = $('.tb_ul > li').text().replace(/[ \r\n\t]{1,}/g, ' ');
   const updatedAt = $('body > div > header > div.top_info2 > div > div > p').text().trim().replace(/[ \r\n\t]{1,}/g, ' ');
-  const stats = $('body > div > header > div.top_info2 > div > div > ul > li:nth-child(1)').text().replace(/[ \r\n\t]{1,}/g, ' ');
 
   const patterns = {
     확진자: /확진자 (?<확진자>[0-9]+)명/g,
