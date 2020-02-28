@@ -1,3 +1,5 @@
+import './scrappers/init';
+
 import { sequelize } from './database';
 import nativeRedis from 'redis';
 import Config from './config';

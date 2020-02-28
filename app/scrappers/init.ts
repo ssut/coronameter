@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import 'source-map-support/register';
 
 import axios from 'axios';
 import axiosCookieJarSupport from 'axios-cookiejar-support';
