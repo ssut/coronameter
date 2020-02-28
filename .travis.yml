@@ -10,4 +10,4 @@ before_install:
 script:
   - npm i -D
   - npx tsc --noEmit
-  - ssh -i ~/.ssh/deploy_key ssut@arc.airfly.io /var/www/deploy-coronameter.sh
+  - ssh -A -i ~/.ssh/deploy_key ssut@arc.airfly.io /var/www/deploy-coronameter.sh
