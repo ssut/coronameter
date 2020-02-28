@@ -13,20 +13,20 @@ export default async function () {
 
   const 확진자수RegexResult = /확진환자[ ]*:[ ]([0-9]+)명/.exec(gwangjuCoronaInfoText);
   if (확진자수RegexResult === null) {
-    throw new Error('Could not parse corona infected persons');
+    throw new Error('Could not parse corona infected people');
   }
   const 확진자수 = 확진자수RegexResult[1];
 
   const 자가격리RegexResult = /자가격리 ([0-9]+)명/.exec(gwangjuCoronaInfoText);
   if (자가격리RegexResult === null) {
-    throw new Error('Could not parse corona infected persons');
+    throw new Error('Could not parse corona infected people');
   }
 
   const 자가격리 = 자가격리RegexResult[1];
 
   const 격리해제RegexResult = /격리해제 ([0-9]+)명/.exec(gwangjuCoronaInfoText);
   if (격리해제RegexResult === null) {
-    throw new Error('Could not parse corona infected persons');
+    throw new Error('Could not parse corona infected people');
   }
 
   const 격리해제 = 격리해제RegexResult[1];
