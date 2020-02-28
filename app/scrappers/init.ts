@@ -4,6 +4,13 @@ import 'source-map-support/register';
 import axios from 'axios';
 import axiosCookieJarSupport from 'axios-cookiejar-support';
 import toughCookie from 'tough-cookie';
+import { init } from '@sentry/node';
+import Config from '../config';
+
+init({
+  dsn: Config.Sentry.DSN,
+  attachStacktrace: true,
+});
 
 export const cookieJar = new toughCookie.CookieJar();
 
