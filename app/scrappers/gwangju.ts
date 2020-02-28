@@ -9,7 +9,6 @@ import { createReadStream, createWriteStream, writeFileSync } from 'fs-extra';
 import * as path from 'path';
 import { createRequireFromPath } from 'module';
 import { crop } from '../utils/imageprocessing';
-import Tesseract, {  createWorker } from 'tesseract.js';
 import { longStackTraces } from 'bluebird';
 
 export default async function () {
