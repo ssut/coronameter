@@ -1,3 +1,4 @@
+import { scrapAll } from './scrappers/index';
 import 'source-map-support/register';
 import './scrappers/init';
 import { sequelize } from './database';
@@ -30,6 +31,12 @@ async function main() {
 
   await sequelize.authenticate();
   await Stat.sync();
+
+  scrapAll().then((stats) => {
+    for (const [province, stat] of Object.entries(stats)) {
+      Stat.updateStats(province, stat);
+    }
+  });
 
   instance.listen(3300);
 }
