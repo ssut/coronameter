@@ -1,5 +1,3 @@
-import './init';
-
 import { ScrapTaskQueue } from './queue';
 import { redis, initialize } from './common';
 import * as tasks from './tasks';
