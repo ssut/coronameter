@@ -4,6 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start:dev": "npx ts-node-dev --respawn ./app/main",
+    "start": "npx ts-node ./app/main",
+    "task-runner": "npx ts-node ./app/task-runner",
+    "task-runner:dev": "npx ts-node-dev --respawn ./app/task-runner",
+    "typecheck": "npx tsc --noEmit",
     "build": "npx tsc"
   },
   "repository": {
