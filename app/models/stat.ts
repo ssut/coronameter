@@ -16,7 +16,16 @@ export class Stat extends Model {
   public readonly updatedAt!: Date;
 
   public static async getLatestStatsByProvinces(): Promise<Stat[]> {
-    const stats = await sequelize.query(`SELECT DISTINCT ON (province) * FROM corona.stats ORDER BY province, "basedAt" DESC    `, {
+    const stats = await sequelize.query(`SELECT DISTINCT ON (province) * FROM corona.stats ORDER BY province, "basedAt" DESC`, {
+      model: this,
+      mapToModel: true,
+    });
+
+    return stats as any;
+  }
+
+  public static async getYesterdayStatsByProvinces(): Promise<Stat[]> {
+    const stats = await sequelize.query(`SELECT DISTINCT ON (province) * FROM corona.stats WHERE "basedAt" < CURRENT_DATE ORDER BY province, "basedAt" DESC`, {
       model: this,
       mapToModel: true,
     });

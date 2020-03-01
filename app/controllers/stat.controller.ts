@@ -10,12 +10,29 @@ export default class StatHandler {
     url: '/aggregated',
   })
   public async getAggregatedStats() {
-    const stats = await Stat.getLatestStatsByProvinces();
+    const [stats, yesterdayStats] = await Promise.all([
+      Stat.getLatestStatsByProvinces(),
+      Stat.getYesterdayStatsByProvinces(),
+    ]);
+
+    const getSum = (stats: Stat[], what: keyof Stat) => stats.reduce((accum, stat) => stat[what] !== -1 ? accum + (stat as any)[what] : accum, 0);
+
+    const totalConfirmed = getSum(stats, 'confirmed');
+    const totalConfirmedYesterday = getSum(yesterdayStats, 'confirmed');
+
+    const totalFatality = getSum(stats, 'fatality');
+    const totalFatalityYesterday = getSum(yesterdayStats, 'fatality');
+
+    const aggregated = {
+      confirmed: totalConfirmed,
+      confirmedDiff: totalConfirmed - totalConfirmedYesterday,
+
+      fatality: totalFatality,
+      fatalityDiff: totalFatality - totalFatalityYesterday,
+    };
 
     return {
-      aggregated: {
-        confirmed: stats.reduce((accum, stat) => stat.confirmed !== -1 ? accum + stat.confirmed : accum, 0),
-      },
+      aggregated,
       stats,
     };
   }

@@ -100,8 +100,25 @@ export const scrapAll = async (concurrency = 5) => {
 if (require.main === module) {
   (async () => {
     const coronaStats = await scrapAll();
+
+    const tabularData = [] as any[];
+
     console.info(Object.values(coronaStats).reduce((accum, current) => accum + (current?.확진자 || 0), 0));
-    console.info(Object.entries(coronaStats).map(([province, stats]) => `${province}: ${stats?.확진자} (${stats?.updatedAt.toFormat('MM.dd HH:mm 기준')})`).join('\n'));
+
+    for (const [province, stat] of Object.entries(coronaStats).sort(([, aStat], [, bStat]) => bStat.확진자 - aStat.확진자)) {
+      tabularData.push({
+        province,
+        확진자: stat?.확진자,
+        사망자: stat?.사망자,
+        퇴원: stat?.퇴원자,
+        음성: stat?.음성,
+        격리: stat?.자가격리,
+
+        기준: stat?.updatedAt.toFormat('MM.dd HH:mm'),
+      });
+    }
+
+    console.table(tabularData);
 
   })();
 }
