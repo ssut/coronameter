@@ -14,10 +14,10 @@ export default async function () {
   });
   const $ = cheerio.load(resp.data);
 
-  const 확진자 = Number(/누계 확진자\s:\s(?<확진자>[0-9]+)명/.exec(resp.data).groups.확진자);
-  const 제공일 = $('#content > div.content-body > div > article > div > div.article-content > section > div.section4-body > div > div.tbl-head > span').text().trim().replace(/(\&nbsp;|\s){1,}/g, ' ');
+  const 확진자 = Number(($('table td').get().map(td => [$(td), $(td).text().trim()]).find(([, text]) => text === '인천')[0] as any).next().text().trim());
+  const 제공일 = $('.tbl-unit').text().trim().replace(/[^0-9.]/g, '');
 
-  const { month, day } = /(?<month>[0-9]{1,2}). (?<day>[0-9]{1,2})./g.exec(제공일).groups;
+  const { month, day } = /(?<month>[0-9]{1,2}).\s?(?<day>[0-9]{1,2})./g.exec(제공일).groups;
   const updatedAt = DateTime.local().set({
     month: Number(month),
     day: Number(day),

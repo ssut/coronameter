@@ -6,6 +6,8 @@ export interface ICoronaStats {
   퇴원자: number;
   사망자: number;
   자가격리?: number;
+  검사중?: number;
+  음성?: number;
 
   updatedAt: DateTime;
 }

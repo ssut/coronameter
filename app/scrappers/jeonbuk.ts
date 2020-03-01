@@ -8,7 +8,7 @@ export default async function () {
   const $ = cheerio.load(resp.data);
 
   const stats = $('.tb_ul > li').text().replace(/[ \r\n\t]{1,}/g, ' ');
-  const updatedAt = $('div.tb_m > p').text().trim().replace(/[ \r\n\t]{1,}/g, ' ');
+  const updatedAt = $('div.tb_m > p').text().trim().replace(/\s/g, '');
 
   const patterns = {
     확진자: /확진자 (?<확진자>[0-9]+)명/g,
@@ -19,7 +19,7 @@ export default async function () {
   };
 
   const info = {
-    updatedAt: DateTime.fromFormat(updatedAt, 'yyyy. M. d. hh:mm'),
+    updatedAt: DateTime.fromFormat(updatedAt, 'yyyy.M.d.hh:mm'),
   } as any;
 
   for (const [key, pattern] of Object.entries(patterns)) {

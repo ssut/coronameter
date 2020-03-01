@@ -24,28 +24,10 @@ const vmContext = vm.createContext({
 });
 
 export default async function () {
-  const mainPage = await axios.get('http://www.chungnam.go.kr');
-  const onClick = cheerio.load(mainPage.data)('[onclick^="encoding"]').attr('onclick');
-  const filename = vm.runInContext(onClick.split(';', 1)[0], vmContext);
+  const statPage = await axios.get('http://www.chungnam.go.kr/coronaStatus.do?tab=1').then(resp => resp.data);
+  const $ = cheerio.load(statPage);
 
-  const payload = qs.stringify({
-    filename,
-  });
-  const page = await axios.get(`http://www.chungnam.go.kr/viewerUtil.do?${payload}`, {
-    maxRedirects: 10,
-  });
-  const fn = new URL(page.config.url).searchParams.get('fn');
-  const page1Url = `http://www.chungnam.go.kr/resulta/${fn}.files/1.xhtml`;
-
-  const referer = page.config.url;
-  const page1 = await axios.get(page1Url, { headers: { referer } }).then(resp => resp.data);
-  const $ = cheerio.load(page1);
-
-  const rows = $('div.page1 table#table_2 tbody tr').get().map((tr) => $(tr).find('td').get().map(td => $(td).text().trim()));
-  const statRows = rows.splice(rows.findIndex(row => row[0] === '충남'));
-  const accumRows = statRows.find(row => row[0] === '누계');
-
-  const textContiansUpdatedAt = rows[0][rows[0].length - 1];
+  const textContiansUpdatedAt = $('.new_tbl_board').prev('p').text();
   const {
     year,
     month,
@@ -63,12 +45,17 @@ export default async function () {
     millisecond: 0,
   });
 
+  const rows = $('.new_tbl_board').eq(0).find('tr').get().map(tr => $(tr).find('td').get().map(td => $(td).text().trim()));
+  const targetRow = rows.find(([cell]) => cell === '누계');
+
   return {
-    확진자: Number(accumRows[1].replace(/[^0-9]/g, '')),
+    확진자: Number(targetRow[1].replace(/[^0-9]/g, '')),
     입원환자: NaN,
     퇴원자: NaN,
     사망자: NaN,
-    자가격리: Number(/자가격리 (?<자가격리>[0-9,]+)명/g.exec(accumRows[accumRows.length - 1]).groups.자가격리.replace(/[^0-9]/g, '')),
+    검사중: Number(targetRow[6].replace(/[^0-9]/g, '')),
+    음성: Number(targetRow[5].replace(/[^0-9]/g, '')),
+    자가격리: Number(/자가격리\s?(?<자가격리>[0-9,]+)명?/g.exec(targetRow[targetRow.length - 1]).groups.자가격리.replace(/[^0-9]/g, '')),
     updatedAt,
   } as ICoronaStats;
 }
