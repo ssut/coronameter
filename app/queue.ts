@@ -6,3 +6,9 @@ export const ScrapTaskQueue = new BeeQueue('scrap', {
   removeOnFailure: true,
   removeOnSuccess: true,
 });
+
+export const ScrapCDCTaskQueue = new BeeQueue('scrap_cdc', {
+  redis: Config.Redis,
+  removeOnFailure: true,
+  removeOnSuccess: true,
+});

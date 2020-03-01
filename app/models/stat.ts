@@ -24,6 +24,22 @@ export class Stat extends Model {
     return stats as any;
   }
 
+  public static async getLatestStatsByProvincesWithCorrections(): Promise<Stat[]> {
+    const stats = await sequelize.query(`
+    WITH stat AS (
+      (SELECT DISTINCT ON (province) "province", "basedAt", "confirmed", "inpatient", "discharged", "fatality", "quarantine" FROM corona.cdc_stats ORDER BY "province", "basedAt" DESC)
+      UNION ALL
+      (SELECT DISTINCT ON (province) "province", "basedAt", "confirmed", "inpatient", "discharged", "fatality", "quarantine" FROM corona.stats ORDER BY "province", "basedAt" DESC)
+    )
+    SELECT DISTINCT ON (province) * FROM stat ORDER BY "province", "basedAt" DESC
+    `, {
+      model: this,
+      mapToModel: true,
+    });
+
+    return stats as any;
+  }
+
   public static async getYesterdayStatsByProvinces(): Promise<Stat[]> {
     const stats = await sequelize.query(`SELECT DISTINCT ON (province) * FROM corona.stats WHERE "basedAt" < CURRENT_DATE ORDER BY province, "basedAt" DESC`, {
       model: this,

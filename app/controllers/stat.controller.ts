@@ -11,7 +11,7 @@ export default class StatHandler {
   })
   public async getAggregatedStats() {
     const [stats, yesterdayStats] = await Promise.all([
-      Stat.getLatestStatsByProvinces(),
+      Stat.getLatestStatsByProvincesWithCorrections(),
       Stat.getYesterdayStatsByProvinces(),
     ]);
 

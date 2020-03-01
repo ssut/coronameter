@@ -20,6 +20,7 @@ import 광주광역시 from './gwangju';
 import 충청남도 from './chungnam';
 import 울산광역시 from './ulsan';
 import { Severity, withScope, captureEvent } from '@sentry/node';
+import 질병관리본부 from './cdc';
 
 const logger = debug('scrappers');
 
@@ -95,6 +96,10 @@ export const scrapAll = async (concurrency = 5) => {
   }
 
   return results;
+};
+
+export {
+  질병관리본부 as scrap질병관리본부,
 };
 
 if (require.main === module) {
