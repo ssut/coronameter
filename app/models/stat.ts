@@ -31,7 +31,7 @@ export class Stat extends Model {
       UNION ALL
       (SELECT DISTINCT ON (province) "province", "basedAt", "confirmed", "inpatient", "discharged", "fatality", "quarantine" FROM corona.stats ORDER BY "province", "basedAt" DESC)
     )
-    SELECT DISTINCT ON (province) * FROM stat ORDER BY "province", "basedAt", "confirmed" DESC
+    SELECT DISTINCT ON (province) * FROM stat ORDER BY "province", "confirmed" DESC
     `, {
       model: this,
       mapToModel: true,
