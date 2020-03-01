@@ -25,7 +25,7 @@ export default async function () {
     imageResponse.data.pipe(stream);
   });
 
-  const 기준 = $('div.banner img + .item1').text().trim().replace(/(\&nbsp;|\s){1,}/g, ' ');
+  const 기준 = $('div.banner img + .item1').text().trim().replace(/\([가-힣]\)/g, '').replace(/(\&nbsp;|\s)+/g, ' ');
   const updatedAt = DateTime.fromFormat(기준, 'M월 d일 H시 기준');
 
   const 확진자 = Number($('div.banner .item2').text().replace(/[^0-9]/g, ''));
