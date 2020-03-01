@@ -10,14 +10,14 @@ async function main() {
   ScrapTaskQueue.process(tasks.scrap);
 
   const job = new CronJob({
-    cronTime: '0 * * * *',
+    cronTime: '0,30 * * * *',
     onTick() {
       ScrapTaskQueue.createJob({}).save();
     },
   });
   job.start();
 
-      ScrapTaskQueue.createJob({}).save();
+  ScrapTaskQueue.createJob({}).save();
 }
 
 main();
