@@ -32,8 +32,8 @@ export default async function () {
   const 기준BoundingRect = ocr.extractBoundingRect(기준Annotation);
 
   const [감염자, 기준] = await Promise.all([
-    crop(filename, 100, 265, 115, 90),
-    crop(filename, 기준BoundingRect.x - 175, 기준BoundingRect.y - 10, 210, 35),
+    crop(filename, 100, 265, 110, 100),
+    crop(filename, 기준BoundingRect.x - 175, 기준BoundingRect.y - 10, 210, 45),
   ]);
 
   const [감염자Text, 기준Text] = await Promise.all([
