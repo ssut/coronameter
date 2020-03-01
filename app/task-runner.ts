@@ -16,6 +16,8 @@ async function main() {
     },
   });
   job.start();
+
+      ScrapTaskQueue.createJob({}).save();
 }
 
 main();
