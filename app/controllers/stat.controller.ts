@@ -12,7 +12,7 @@ export default class StatHandler {
   public async getAggregatedStats() {
     const [stats, yesterdayStats] = await Promise.all([
       Stat.getLatestStatsByProvincesWithCorrections(),
-      Stat.getYesterdayStatsByProvinces(),
+      Stat.getYesterdayStatsByProvincesWithCorrections(),
     ]);
 
     const getSum = (stats: Stat[], what: keyof Stat) => stats.reduce((accum, stat) => stat[what] !== -1 ? accum + (stat as any)[what] : accum, 0);
