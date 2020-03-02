@@ -11,13 +11,13 @@ async function main() {
   ScrapCDCTaskQueue.process(tasks.scrapCDC);
 
   const scrapJob = new CronJob({
-    cronTime: '0,30 * * * *',
+    cronTime: '0,10,30,50 * * * *',
     onTick() {
       ScrapTaskQueue.createJob({}).save();
     },
   });
   const scrapCDCJob = new CronJob({
-    cronTime: '0 * * * *',
+    cronTime: '0,10,50 * * * *',
     onTick() {
       ScrapCDCTaskQueue.createJob({}).save();
     },
