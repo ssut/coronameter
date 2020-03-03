@@ -25,6 +25,11 @@ export default class Config {
     db: Number(env.REDIS_DB) || 2,
   });
 
+  public static Chat = Object.freeze({
+    maxUsersPerChat: Number(env.CHAT_MAX_USERS_PER_CHAT),
+    rateLimitPerMinute: Number(env.CHAT_RATE_LIMIT_PER_MINUTE),
+  });
+
   public static Sentry = Object.freeze({
     DSN: env.SENTRY_DSN!,
   });
