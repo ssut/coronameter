@@ -3,6 +3,7 @@ import 'dotenv/config';
 const env = process.env;
 
 export default class Config {
+  public static Host = env.HOST! || '0.0.0.0';
   public static Port = Number(env.PORT!) || 3300;
 
   public static Postgres = Object.freeze({

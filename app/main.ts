@@ -60,7 +60,7 @@ async function main() {
 
   await initialize();
 
-  instance.listen(Config.Port, (err, address) => {
+  instance.listen(Config.Port, Config.Host, (err, address) => {
     if (err) {
       throw err;
     }
