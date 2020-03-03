@@ -134,6 +134,7 @@ class Chat {
 
     const client = redis.redis.duplicate();
     client.setMaxListeners(Infinity);
+    client.subscribe(`${this.prefix}:channels:${channelName}`);
     this.clients.set(channelName, client);
 
     return client;
@@ -165,6 +166,8 @@ class WebsocketConnectionHandler {
   private ecdh!: crypto.ECDH;
   private key!: Buffer;
   private secret!: Buffer;
+
+  private isSubscribing = false;
 
   // private cipher!: crypto.Cipher;
   // private decipher!: crypto.Decipher;
@@ -225,8 +228,7 @@ class WebsocketConnectionHandler {
     encrypted = Buffer.concat([encrypted, cipher.final()]);
 
     this.connection.write(serialize({
-      e: 1,
-      d: encrypted.toString('base64'),
+      $: encrypted.toString('base64'),
     }));
   }
 
@@ -250,10 +252,10 @@ class WebsocketConnectionHandler {
 
   public async onMessage(raw: any) {
     let data = JSON.parse(raw);
-    if (data.e === 1) {
+    if (typeof data.$ === 'string') {
       const decipher = this.getDecipher();
 
-      let decrypted = decipher.update(Buffer.from(data.d, 'base64'));
+      let decrypted = decipher.update(Buffer.from(data.$, 'base64'));
       decrypted = Buffer.concat([decrypted, decipher.final()]);
       data = JSON.parse(decrypted.toString());
     }
@@ -275,6 +277,9 @@ class WebsocketConnectionHandler {
         }
 
         this.secret = this.ecdh.computeSecret(Buffer.from(data.k, 'base64'));
+        if (this.secret.toString('base64') !== data.s) {
+          throw new Error('encryption channel failed');
+        }
 
         this.hello = uuid.v4();
         this.sendEncrypted({
