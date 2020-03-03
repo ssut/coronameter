@@ -20,22 +20,34 @@ import { serialize } from 'class-transformer';
 import Config from '../config';
 import * as randomNumber from 'random-number-csprng';
 import { Message } from './models/message';
+import * as namer from 'korean-name-generator';
+import { RedisClient } from 'redis';
 
-const subscribeClient = redis.redis.duplicate();
-subscribeClient.setMaxListeners(Infinity);
+const globalSubscribeClient = redis.redis.duplicate();
+globalSubscribeClient.setMaxListeners(Infinity);
+
+interface ChatData {
+  /** timestamp */
+  t: number;
+  /** nickname */
+  n: string;
+  /** message */
+  m: string;
+}
 
 class Chat {
   public static prefix = 'coronameter:chats';
+  public static clients = new Map<string, RedisClient>();
 
   public static async getChannelNames() {
     const channels = [] as string[];
 
     let cursor = 0;
     for (; ;) {
-      const [nextCursor, keys] = await redis.scan(cursor, ['MATCH', `${this.prefix}:channels:*`], ['COUNT', 10]);
+      const [nextCursor, keys] = await redis.scan(cursor, ['MATCH', `${this.prefix}:channels:*:exists`], ['COUNT', 10]);
       const hasNextCursor = nextCursor !== '0';
 
-      channels.push(...keys.map(key => key.replace(new RegExp('^' + _.escapeRegExp(this.prefix)), '')));
+      channels.push(...keys.map(key => key.replace(new RegExp('^' + _.escapeRegExp(`${this.prefix}:channels:`)), '').replace(/:exists$/, '')));
 
       if (!hasNextCursor) {
         break;
@@ -46,26 +58,95 @@ class Chat {
     return channels;
   }
 
-  public static async createChannel() {
+  public static async extendClient(clientId: string) {
+    const clientKey = `${this.prefix}:clients:${clientId}`;
 
+    if (!(await redis.exists(clientKey))) {
+      return;
+    }
+
+    const nickname = await redis.hget(clientKey, 'nickname');
+    const nicknameKey = `${this.prefix}:nicknames:${nickname}`;
+
+    await redis.expire(clientKey, 60);
+    await redis.expire(nicknameKey, 60);
+  }
+
+  public static async ensureNickname(clientId: string) {
+    for (; ;) {
+      const nickname = namer.generate();
+
+      const clientKey = `${this.prefix}:clients:${clientId}`;
+      const nicknameKey = `${this.prefix}:nicknames:${nickname}`;
+
+      const clientNickname = await redis.hget(clientKey, 'nickname');
+      if (typeof clientNickname === 'string' && clientNickname.length > 0) {
+        // extend
+        await redis.expire(clientKey, 60);
+        await redis.expire(nicknameKey, 60);
+
+        return clientNickname;
+      }
+
+      if (await redis.exists(nicknameKey)) {
+        continue;
+      }
+
+      await redis.hset(clientKey, 'nickname', nickname);
+      await redis.expire(clientKey, 60);
+      await redis.setex(nicknameKey, 30, clientId);
+
+      return nickname;
+    }
+  }
+
+  public static async createChannel() {
+    const key = `${this.prefix}:channels:id`;
+
+    const id = String(await redis.incr(key));
+    await redis.set(`${this.prefix}:channels:${id}:exists`, '1');
+
+    return id;
   }
 
   public static async ensureChannel() {
     const channelNames = await this.getChannelNames();
-    if (channelNames.length === 0) {
-    }
 
-    for (const channelName of channelNames) {
+    for (let i = 0; ; i++) {
+      let channelName = channelNames[i];
+      if (!channelName) {
+        channelName = await this.createChannel();
+      }
+
       const num = await redis.pubsub('NUMSUB', `${this.prefix}:channels:${channelName}`);
       if (num >= Config.Chat.maxUsersPerChat) {
         continue;
       }
 
+      return channelName;
     }
-
   }
 
-  public static async getOrCreateNickname(clientId: string) {
+  public static getSubscribeClient(channelName: string) {
+    if (this.clients.has(channelName)) {
+      return this.clients.get(channelName);
+    }
+
+    const client = redis.redis.duplicate();
+    client.setMaxListeners(Infinity);
+    this.clients.set(channelName, client);
+
+    return client;
+  }
+
+  public static async getChannelParticipant(channelName: string) {
+    const [, num] = await redis.pubsub('NUMSUB', `${this.prefix}:channels:${channelName}`);
+
+    return num;
+  }
+
+  public static async publish(channelName: string, data: ChatData) {
+    await redis.publish(`${this.prefix}:channels:${channelName}`, JSON.stringify(data));
   }
 }
 
@@ -76,6 +157,7 @@ class WebsocketConnectionHandler {
   private sessionId!: string;
   private lang!: Lang;
   private fingerprint!: string;
+  private channel!: string;
   private nickname!: string;
 
   private hello!: string;
@@ -84,8 +166,26 @@ class WebsocketConnectionHandler {
   private key!: Buffer;
   private secret!: Buffer;
 
-  private cipher!: crypto.Cipher;
-  private decipher!: crypto.Decipher;
+  // private cipher!: crypto.Cipher;
+  // private decipher!: crypto.Decipher;
+
+  private subscribeClient?: RedisClient;
+
+  private getCipher() {
+    if (!this.iv || !this.secret) {
+      return null;
+    }
+
+    return crypto.createCipheriv('aes-256-cbc', this.secret, this.iv);
+  }
+
+  private getDecipher() {
+    if (!this.iv || !this.secret) {
+      return null;
+    }
+
+    return crypto.createDecipheriv('aes-256-cbc', this.secret, this.iv);
+  }
 
   public constructor(
     private readonly connection: websocketPlugin.SocketStream,
@@ -97,8 +197,6 @@ class WebsocketConnectionHandler {
     this.connection.on('close', this.dispose.bind(this));
     this.connection.on('end', this.dispose.bind(this));
 
-    this.onRedisMessageCallback = this.onRedisMessage.bind(this);
-    subscribeClient.on('message', this.onRedisMessageCallback);
   }
 
   public async initialize() {
@@ -121,8 +219,10 @@ class WebsocketConnectionHandler {
   }
 
   public sendEncrypted(message: Message) {
-    let encrypted = this.cipher.update(serialize(message));
-    encrypted = Buffer.concat([encrypted, this.cipher.final()]);
+    const cipher = this.getCipher();
+
+    let encrypted = cipher.update(Buffer.from(serialize(message)));
+    encrypted = Buffer.concat([encrypted, cipher.final()]);
 
     this.connection.write(serialize({
       e: 1,
@@ -131,23 +231,40 @@ class WebsocketConnectionHandler {
   }
 
   public async onRedisMessage(channel: string, message: string) {
+    if ((this.channel?.length ?? 0) === 0 || !channel.includes(`:${this.channel}`)) {
+      return;
+    }
+
+    const data = JSON.parse(message) as ChatData;
+
+    this.sendEncrypted({
+      ts: -1,
+      type: ServerMessageType.Message,
+      data,
+    });
   }
 
   public dispose() {
-    subscribeClient.removeListener('message', this.onRedisMessageCallback);
+    this.subscribeClient?.removeListener('message', this.onRedisMessageCallback);
   }
 
   public async onMessage(raw: any) {
     let data = JSON.parse(raw);
     if (data.e === 1) {
-      let decrypted = this.decipher.update(Buffer.from(data.d, 'base64'));
-      decrypted = Buffer.concat([decrypted, this.decipher.final()]);
+      const decipher = this.getDecipher();
+
+      let decrypted = decipher.update(Buffer.from(data.d, 'base64'));
+      decrypted = Buffer.concat([decrypted, decipher.final()]);
       data = JSON.parse(decrypted.toString());
     }
 
     const message = plainToClass<ClientMessage, any>(ClientMessage, data);
     if ((await validate(message)).length > 0) {
       return;
+    }
+
+    if (this.clientId?.length > 0 && this.nickname?.length > 0) {
+      Chat.extendClient(this.clientId);
     }
 
     switch (message.op) {
@@ -158,8 +275,6 @@ class WebsocketConnectionHandler {
         }
 
         this.secret = this.ecdh.computeSecret(Buffer.from(data.k, 'base64'));
-        this.cipher = crypto.createCipheriv('aes-256-cbc', this.secret, this.iv);
-        this.decipher = crypto.createDecipheriv('aes-256-cbc', this.secret, this.iv);
 
         this.hello = uuid.v4();
         this.sendEncrypted({
@@ -185,6 +300,47 @@ class WebsocketConnectionHandler {
         this.sessionId = data.sessionId;
         this.lang = data.lang;
         this.fingerprint = data.fingerprint;
+
+        this.nickname = await Chat.ensureNickname(this.clientId);
+        this.channel = await Chat.ensureChannel();
+        this.subscribeClient = await Chat.getSubscribeClient(this.channel);
+
+        this.onRedisMessageCallback = this.onRedisMessage.bind(this);
+        this.subscribeClient.on('message', this.onRedisMessageCallback);
+
+        console.info(this.channel, this.nickname, await Chat.getChannelParticipant(this.channel)),
+
+        this.sendEncrypted({
+          ts: -1,
+          type: ServerMessageType.Hello,
+          data: {
+            channel: this.channel,
+            nickname: this.nickname,
+            participant: await Chat.getChannelParticipant(this.channel),
+          },
+        });
+      } break;
+
+      case ClientMessageOperation.Message: {
+        if (!this.channel) {
+          throw new Error('There is no participating channel');
+        }
+
+        await Chat.publish(this.channel, {
+          t: Date.now(),
+          m: message.data,
+          n: this.nickname,
+        });
+      } break;
+
+      case ClientMessageOperation.Ping: {
+        this.sendEncrypted({
+          ts: message.ts,
+          type: ServerMessageType.Pong,
+          data: {
+            participant: this.channel ? await Chat.getChannelParticipant(this.channel) : 0,
+          },
+        });
       } break;
     }
   }
