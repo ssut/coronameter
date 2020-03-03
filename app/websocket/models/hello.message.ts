@@ -11,7 +11,7 @@ export class HelloMessage {
   @IsUUID('4')
   public sessionId!: string;
 
-  @IsEnum(Lang)
+  @IsString()
   public lang!: Lang;
 
   @IsString()

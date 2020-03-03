@@ -311,6 +311,7 @@ class WebsocketConnectionHandler {
       Chat.extendClient(this.clientId);
     }
 
+
     switch (message.op) {
       case ClientMessageOperation.Exchange: {
         const data = plainToClass<ExchangeMessage, any>(ExchangeMessage, message.data);
