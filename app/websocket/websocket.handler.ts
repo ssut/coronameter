@@ -27,6 +27,8 @@ const globalSubscribeClient = redis.redis.duplicate();
 globalSubscribeClient.setMaxListeners(Infinity);
 
 interface ChatData {
+  /** clientId (uuid) */
+  c: string;
   /** timestamp */
   t: number;
   /** nickname */
@@ -36,8 +38,48 @@ interface ChatData {
 }
 
 class Chat {
-  public static prefix = 'coronameter:chats';
-  public static clients = new Map<string, RedisClient>();
+  public static readonly prefix = 'coronameter:chats';
+  public static readonly clients = new Map<string, RedisClient>();
+
+  public static readonly scripts = {
+    ratelimit: {
+      script: `
+        redis.call('ZREMRANGEBYSCORE', KEYS[1], 0, ARGV[1] - 60 * 1000)
+        if tonumber(redis.call('ZCARD', KEYS[1])) < 5
+        then
+          redis.call('ZADD', KEYS[1], ARGV[1], ARGV[1])
+          return '0'
+        else
+          return '1'
+        end
+      `,
+      hash: '',
+      /**
+       * true means okay
+       * false means not okay
+       */
+      async fn(clientId: string) {
+        const sha = Chat.scripts.ratelimit.hash;
+        const key = `${Chat.prefix}:clients:${clientId}:limit`;
+
+        return Number(await redis.evalsha(sha, 1, [key], [String(Date.now())])) === 0;
+      },
+    },
+  };
+
+  public static async initialize() {
+    const { keys, multi } = Object.entries(this.scripts).reduce(({ keys, multi }, [key, { script }]) => ({
+      keys: [...keys, key],
+      multi: multi.script('load', script),
+    }), {
+      keys: [] as string[],
+      multi: redis.multi(),
+    });
+
+    for (const [key, hash] of _.zip(keys, await redis.execMulti(multi))) {
+      (this.scripts as any)[key!].hash = hash as string;
+    }
+  }
 
   public static async getChannelNames() {
     const channels = [] as string[];
@@ -331,11 +373,32 @@ class WebsocketConnectionHandler {
           throw new Error('There is no participating channel');
         }
 
-        await Chat.publish(this.channel, {
-          t: Date.now(),
-          m: message.data,
-          n: this.nickname,
-        });
+        if (!(await Chat.scripts.ratelimit.fn(this.clientId))) {
+          this.sendEncrypted({
+            ts: message.ts,
+            type: ServerMessageType.MessageResult,
+            data: {
+              sent: false,
+              reason: 'ratelimit',
+            },
+          });
+        } else {
+          await Chat.publish(this.channel, {
+            c: this.clientId,
+            t: Date.now(),
+            m: message.data,
+            n: this.nickname,
+          });
+
+          this.sendEncrypted({
+            ts: message.ts,
+            type: ServerMessageType.MessageResult,
+            data: {
+              sent: true,
+              reason: '',
+            },
+          });
+        }
       } break;
 
       case ClientMessageOperation.Ping: {
@@ -352,6 +415,8 @@ class WebsocketConnectionHandler {
 }
 
 export default async function (app: FastifyInstance) {
+  await Chat.initialize();
+
   app.get('/chat', { websocket: true }, async (connection, req) => {
     const connectionHandler = new WebsocketConnectionHandler(connection, req);
     await connectionHandler.initialize();

@@ -4,4 +4,5 @@ export enum ServerMessageType {
   Hello,
   Pong,
   Message,
+  MessageResult,
 }
