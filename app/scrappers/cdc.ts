@@ -143,7 +143,7 @@ export default async function () {
       일일검사건수: data.일일검사건수명,
       updatedAt,
     } as ICoronaStats];
-  }));
+  })) as { [key: string]: ICoronaStats };
 
   return {
     summaries,

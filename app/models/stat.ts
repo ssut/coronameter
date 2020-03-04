@@ -15,54 +15,42 @@ export class Stat extends Model {
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
-  public static async getLatestStatsByProvinces(): Promise<Stat[]> {
-    const stats = await sequelize.query(`SELECT DISTINCT ON (province) * FROM corona.stats ORDER BY province, "basedAt" DESC`, {
-      model: this,
-      mapToModel: true,
-    });
-
-    return stats as any;
-  }
-
-  public static async getLatestStatsByProvincesWithCorrections(): Promise<Stat[]> {
+  public static async getLatestStatsByProvincesWithCorrections() {
     const stats = await sequelize.query(`
-    WITH stat AS (
-      (SELECT DISTINCT ON (province) "province", "basedAt", "confirmed", "inpatient", "discharged", "fatality", "quarantine" FROM corona.cdc_stats ORDER BY "province", "basedAt" DESC)
-      UNION ALL
-      (SELECT DISTINCT ON (province) "province", "basedAt", "confirmed", "inpatient", "discharged", "fatality", "quarantine" FROM corona.stats ORDER BY "province", "basedAt" DESC)
-    )
-    SELECT DISTINCT ON (province) * FROM stat ORDER BY "province", "confirmed" DESC
-    `, {
-      model: this,
-      mapToModel: true,
-    });
+      WITH stat AS (
+        (select distinct ON (type, "isLocal", country, province) province, confirmed, fatality, "basedAt", 'cdc' as source FROM corona.cdc_infos WHERE "type" = 'PROVINCE' AND "isLocal" = true AND "country" = '대한민국' ORDER BY type, "isLocal", "country", "province", "basedAt" DESC)
+        UNION
+        (select distinct ON (province) province, confirmed, fatality, "basedAt", 'province' as source FROM corona.stats ORDER BY "province", "basedAt" DESC)
+      )
+      SELECT distinct ON (province) province, confirmed, fatality, "basedAt", source FROM stat ORDER BY "province", "confirmed" DESC;
+    `);
 
-    return stats as any;
+    return stats[0] as any as {
+      province: string;
+      confirmed: number;
+      fatality: number;
+      basedAt: Date;
+      source: 'province' | 'cdc';
+    }[];
   }
 
-  public static async getYesterdayStatsByProvinces(): Promise<Stat[]> {
-    const stats = await sequelize.query(`SELECT DISTINCT ON (province) * FROM corona.stats WHERE "basedAt" < CURRENT_DATE ORDER BY province, "basedAt" DESC`, {
-      model: this,
-      mapToModel: true,
-    });
-
-    return stats as any;
-  }
-
-  public static async getYesterdayStatsByProvincesWithCorrections(): Promise<Stat[]> {
+  public static async getYesterdayStatsByProvincesWithCorrections() {
     const stats = await sequelize.query(`
-    WITH stat AS (
-      (SELECT DISTINCT ON (province) "province", "basedAt", "confirmed", "inpatient", "discharged", "fatality", "quarantine" FROM corona.cdc_stats WHERE "basedAt" < CURRENT_DATE ORDER BY "province", "basedAt" DESC)
-      UNION ALL
-      (SELECT DISTINCT ON (province) "province", "basedAt", "confirmed", "inpatient", "discharged", "fatality", "quarantine" FROM corona.stats WHERE "basedAt" < CURRENT_DATE ORDER BY "province", "basedAt" DESC)
-    )
-    SELECT DISTINCT ON (province) * FROM stat ORDER BY "province", "confirmed" DESC
-    `, {
-      model: this,
-      mapToModel: true,
-    });
+      WITH stat AS (
+        (select distinct ON (type, "isLocal", country, province) province, confirmed, fatality, "basedAt", 'cdc' as source FROM corona.cdc_infos WHERE "type" = 'PROVINCE' AND "isLocal" = true AND "country" = '대한민국' AND "basedAt" < CURRENT_DATE ORDER BY type, "isLocal", "country", "province", "basedAt" DESC)
+        UNION
+        (select distinct ON (province) province, confirmed, fatality, "basedAt", 'province' as source FROM corona.stats WHERE "basedAt" < CURRENT_DATE ORDER BY "province", "basedAt" DESC)
+      )
+      SELECT distinct ON (province) province, confirmed, fatality, "basedAt", source FROM stat ORDER BY "province", "confirmed" DESC;
+    `);
 
-    return stats as any;
+    return stats[0] as any as {
+      province: string;
+      confirmed: number;
+      fatality: number;
+      basedAt: Date;
+      source: 'province' | 'cdc';
+    }[];
   }
 
   public static async updateStats(province: string, stats: ICoronaStats) {
