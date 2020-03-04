@@ -7,16 +7,16 @@ export default async function () {
   const resp = await axios.get('https://www.gg.go.kr/bbs/boardView.do?bsIdx=464&bIdx=2296956&menuId=1535');
   const $ = cheerio.load(resp.data);
 
-  const updatedAt = $('#quick3 > div > div.dashBoard > div > div:nth-child(2)').text().trim().split(' : ').reverse()[0].trim().replace('오전', 'AM').replace('오후', 'PM');
+  const updatedAt = $('.updateDate').text().trim().replace(/[^0-9.]/g, '');
 
   return {
-    확진자: Number($('#quick3 > div > div.dashBoard > div > ul:nth-child(3) > li:nth-child(4) > strong').text()),
-    입원환자: Number($('#quick3 > div > div.dashBoard > div > ul:nth-child(3) > li:nth-child(1) > strong').text()),
-    퇴원자: Number($('#quick3 > div > div.dashBoard > div > ul:nth-child(3) > li:nth-child(2) > strong').text()),
-    사망자: Number($('#quick3 > div > div.dashBoard > div > ul:nth-child(3) > li:nth-child(3) > strong').text()),
+    확진자: Number($('#quick3 div.dashBoard ul.column-4 li').eq(3).children('strong').text()),
+    입원환자: Number($('#quick3 div.dashBoard ul.column-4 li').eq(0).children('strong').text()),
+    퇴원자: Number($('#quick3 div.dashBoard ul.column-4 li').eq(1).children('strong').text()),
+    사망자: Number($('#quick3 div.dashBoard ul.column-4 li').eq(2).children('strong').text()),
 
     // 2020.2.27 AM 9:00
-    updatedAt: DateTime.fromFormat(updatedAt, 'yyyy.M.d. a h:mm'),
+    updatedAt: DateTime.fromFormat(updatedAt, 'yyyy.M.d.hh'),
   } as ICoronaStats;
 }
 
