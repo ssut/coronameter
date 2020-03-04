@@ -45,7 +45,7 @@ class Chat {
     ratelimit: {
       script: `
         redis.call('ZREMRANGEBYSCORE', KEYS[1], 0, ARGV[1] - 60 * 1000)
-        if tonumber(redis.call('ZCARD', KEYS[1])) < 5
+        if tonumber(redis.call('ZCARD', KEYS[1])) < tonumber(ARGV[2])
         then
           redis.call('ZADD', KEYS[1], ARGV[1], ARGV[1])
           return '0'
@@ -58,11 +58,11 @@ class Chat {
        * true means okay
        * false means not okay
        */
-      async fn(clientId: string) {
+      async fn(clientId: string, limit = 10) {
         const sha = Chat.scripts.ratelimit.hash;
         const key = `${Chat.prefix}:clients:${clientId}:limit`;
 
-        return Number(await redis.evalsha(sha, 1, [key], [String(Date.now())])) === 0;
+        return Number(await redis.evalsha(sha, 1, [key], [String(Date.now()), String(limit)])) === 0;
       },
     },
   };
@@ -374,7 +374,7 @@ class WebsocketConnectionHandler {
           throw new Error('There is no participating channel');
         }
 
-        if (!(await Chat.scripts.ratelimit.fn(this.clientId))) {
+        if (!(await Chat.scripts.ratelimit.fn(this.clientId, Config.Chat.rateLimitPerMinute))) {
           this.sendEncrypted({
             ts: message.ts,
             type: ServerMessageType.MessageResult,
