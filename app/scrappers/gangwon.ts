@@ -34,19 +34,15 @@ export default async function () {
   const 감염자Annotation = fullOcrResult.textAnnotations.find(({ description }) => description === '감염자');
   const 감염자BoundingRect = ocr.extractBoundingRect(감염자Annotation);
 
-  console.info(감염자BoundingRect);
-
   const [감염자, 기준] = await Promise.all([
     crop(filename, 감염자BoundingRect.x - 20, 감염자BoundingRect.y - 80, 감염자BoundingRect.width + 80, 80),
     crop(filename, 기준BoundingRect.x - 175, 기준BoundingRect.y - 10, 210, 45),
   ]);
-  console.info(감염자, 기준);
 
   const [감염자Text, 기준Text] = await Promise.all([
     ocr.execute(감염자, path.extname(감염자)).then(x => x.fullTextAnnotation.text),
     ocr.execute(기준, path.extname(기준)).then(x => x.fullTextAnnotation.text),
   ]);
-  console.info(감염자Text, 기준Text);
 
   const { 확진자 } = /(?<확진자>[0-9]{1,})\s?명?/g.exec(감염자Text).groups;
   const {

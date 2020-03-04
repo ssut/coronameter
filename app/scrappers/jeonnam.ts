@@ -6,8 +6,7 @@ import { DateTime } from 'luxon';
 export default async function () {
   const $ = await axios.get('https://www.jeonnam.go.kr/coronaMainPage.do').then(resp => cheerio.load(resp.data));
 
-
-  const updatedAt = $('.title em').text().replace('오전', 'AM').replace('오후', 'PM').replace(/\(|\)/g, '');
+  const updatedAt = $('.title em').text().replace('오전', 'AM').replace('오후', 'PM').replace(/\(|\)/g, '').replace(/\s+?기준/g, '');
   const data = Object.fromEntries($('.name').get().map(x => [$(x).text().trim(), Number($(x).next('.num').text().replace(/[^0-9]/g, ''))]));
 
   const info = {
