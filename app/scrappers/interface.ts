@@ -8,6 +8,8 @@ export interface ICoronaStats {
   자가격리?: number;
   검사중?: number;
   음성?: number;
+  일일검사건수?: number;
+  전일대비?: number;
 
   updatedAt: DateTime;
 }

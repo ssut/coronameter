@@ -24,50 +24,134 @@ const mappings = Object.freeze({
   제주: '제주특별자치도',
 });
 
-export default async function () {
-  const $ = await axios.get('http://ncov.mohw.go.kr/bdBoardList_Real.do?brdId=1&brdGubun=13&ncvContSeq=&contSeq=&board_id=&gubun=').then(resp => cheerio.load(resp.data));
+const getSummaries = async () => {
+  const $ = await axios.get('http://ncov.mohw.go.kr/bdBoardList_Real.do?brdId=&brdGubun=&ncvContSeq=&contSeq=&board_id=&gubun=').then(resp => cheerio.load(resp.data));
 
-  const updatedAtText = $('.timetable p.info span').text().replace(/\([가-힣]\)/g, '');
-  const updatedAt = DateTime.fromFormat(updatedAtText, 'yyyy년 M월 d일 H시');
+  const koreaUpdatedAtText = $('.bv_content h4 + .s_descript').eq(0).text().split('현황', 2)[1].replace(/[^0-9.일시]/g, '');
+  const koreaUpdatedAt = DateTime.fromFormat(koreaUpdatedAtText, 'M.d일H시').set({
+    minute: 0,
+    second: 0,
+    millisecond: 0,
+  });
 
-  const tabularData = $('table.num tr').get().map(tr => $(tr).find('th, td').get().map(td => $(td).text().trim()));
-
-  const header = tabularData[1];
-  const select = (province: keyof typeof mappings) => {
-    const row = tabularData.find(([head]) => head === province);
-    if (!row) {
-      return null;
-    }
-
-    const obj = Object.fromEntries(header.map((title, index, arr) => [
-      title === '계' ? (arr.indexOf(title, index + 1) > -1 ? '확진환자' : '검사환자') : title,
-      Number(row.slice(2)[index].replace(/[^0-9]/g, '')),
-    ]));
-    return obj;
+  const koreaSummary = Object.fromEntries($('table.num').eq(0).find('tbody tr').get().map(tr => [$(tr).find('th').text().trim(), Number($(tr).find('td').text().replace(/[^0-9]/g, ''))])) as {
+    확진환자: number;
+    '확진환자 격리해제': number;
+    사망자: number;
+    검사진행: number;
   };
 
-  const data = Object.keys(mappings).reduce((obj, province) => {
-    obj[province] = select(province as any);
+  const overseasSummary = Object.fromEntries($('table.num').eq(1).find('tbody tr').get().map((tr, index, arr) => {
+    const $tr = $(tr);
+    const country = $tr.find('.w_bold').text().trim();
+    const text = $tr.find('td:last-child').text();
+    const confirmed = Number(text.split('명', 1)[0].replace(/[^0-9]/g, ''));
+    const deaths = !text.includes('사망') ? 0 : Number(text.split('사망')[1].replace(/[^0-9]/g, ''));
 
-    return obj;
-  }, {} as { [key in keyof typeof mappings]: any });
+    if (index === arr.length - 1) { return null; }
 
-  return Object.entries(data).reduce((obj, [shortProvince, data]) => {
-    obj[mappings[shortProvince]] = {
-      확진자: data.확진환자,
-      입원환자: data['격리 중'],
-      퇴원자: data.격리해제,
-      사망자: data.사망,
-      자가격리: NaN,
-      검사중: data['검사 중'],
-      음성: data.결과음성,
+    return [country, { confirmed, deaths }];
+  }).filter(x => x)) as {
+    [key: string]: {
+      confirmed: number;
+      deaths: number;
+    },
+  };
+
+  const {
+    confirmed,
+    death,
+    month,
+    day,
+    hour,
+  } = /(?<confirmed>[0-9,]+)명\s?\(사망 (?<death>[0-9,]+)\) ?\((?<month>[0-9]{1,2})\.(?<day>[0-9]{1,2})일\s?(?<hour>[0-9]{1,2})/g.exec($('table.num').eq(1).parent().prev('.s_descript').text()).groups;
+  const overseasUpdatedAt = DateTime.local().set({
+    month: Number(month),
+    day: Number(day),
+    hour: Number(hour),
+    minute: 0,
+    second: 0,
+    millisecond: 0,
+  });
+
+  return {
+    korea: {
+      summary: koreaSummary,
+      updatedAt: koreaUpdatedAt,
+    },
+    overseas: {
+      total: {
+        확진환자: Number(confirmed.replace(/[^0-9]/g, '')),
+        사망자: Number(death.replace(/[^0-9]/g, '')),
+      },
+      summary: overseasSummary,
+      updatedAt: overseasUpdatedAt,
+    },
+  };
+};
+
+const getKorea = async () => {
+  const $ = await axios.get('http://ncov.mohw.go.kr/bdBoardList_Real.do?brdId=1&brdGubun=13&ncvContSeq=&contSeq=&board_id=&gubun=').then(resp => cheerio.load(resp.data));
+
+  const tabularData = $('table.num tr').get().map(tr => $(tr).find('th, td').get().map(td => $(td).text().trim()));
+  const header = [...tabularData[0].slice(0, tabularData[0].findIndex(x => x === '확진환자 (명)')), ...tabularData[1], ...tabularData[0].slice(tabularData[0].findIndex(x => x === '확진환자 (명)') + 1)].map(x => x.replace(/[^가-힣]/g, ''));;
+
+  const withoutSum = tabularData.slice(tabularData.findIndex(row => row[0] === '합계') + 1);
+  const data = Object.fromEntries(withoutSum.map((cols) => {
+    return [cols[0], cols.reduce((obj, col, index) => {
+      if (index === 0) {
+        return obj;
+      }
+
+      obj[header[index]] = Number(col.replace(/[^0-9.]/g, ''));
+      return obj;
+    }, {})];
+  })) as {
+    [key in typeof mappings[keyof typeof mappings]]: {
+      전일대비확진환자증감: number;
+      확진환자수: number;
+      사망자수: number;
+      발생률: number;
+      일일검사건수명: number;
+    };
+  };
+
+  const updatedAtText = $('.info > span').text().replace(/[^0-9년월일시]/g, '');
+  const updatedAt = DateTime.fromFormat(updatedAtText, 'yyyy년M월d일H시').set({
+    minute: 0,
+    second: 0,
+    millisecond: 0,
+  });
+
+  return {
+    data,
+    updatedAt,
+  };
+};
+
+export default async function () {
+  const [summaries, { data: koreaData, updatedAt }] = await Promise.all([
+    getSummaries(),
+    getKorea(),
+  ]);
+
+  const korea = Object.fromEntries(Object.entries(koreaData).map(([province, data]) => {
+    return [mappings[province], {
+      확진자: data.확진환자수,
+      사망자: data.사망자수,
+      전일대비: data.전일대비확진환자증감,
+      일일검사건수: data.일일검사건수명,
       updatedAt,
-    } as ICoronaStats;
+    } as ICoronaStats];
+  }));
 
-    return obj;
-  }, {} as { [key in typeof mappings[keyof typeof mappings]]: ICoronaStats });
+  return {
+    summaries,
+    korea,
+  };
 }
 
 if (require.main === module) {
-  module.exports.default().then(console.info);
+  // module.exports.default();
+  module.exports.default().then(x => console.info(JSON.stringify(x.summaries, null, 2)));
 }
