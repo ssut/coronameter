@@ -1,4 +1,4 @@
-import { Model, DataTypes } from 'sequelize';
+import { Model, DataTypes, Op, literal } from 'sequelize';
 import { sequelize } from '../database';
 import { ICoronaStats } from '../scrappers/interface';
 import scrapCDC from '../scrappers/cdc';
@@ -25,6 +25,58 @@ export class CDCInfo extends Model {
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
+
+  public static getSummary(country: string, before?: Date) {
+    return this.findOne({
+      where: {
+        type: CDCInfoType.Summary,
+        isLocal: country === '대한민국',
+        country,
+        ...(
+          before
+            ? { basedAt: { [Op.lt]: before } }
+            : {}
+        ),
+      },
+      order: literal('"basedAt" DESC'),
+      limit: 1,
+    });
+  }
+
+  public static getOverseasSummaries(before?: Date) {
+    return this.findAll({
+      where: {
+        type: CDCInfoType.Summary,
+        isLocal: false,
+        country: { [Op.ne]: '*' },
+        province: null,
+        ...(
+          before
+            ? { basedAt: { [Op.lt]: before } }
+            : {}
+        ),
+      },
+      order: literal('"basedAt" DESC'),
+    });
+  }
+
+  public static getOverseasTotal(before?: Date) {
+    return this.findOne({
+      where: {
+        type: CDCInfoType.Summary,
+        isLocal: false,
+        country: '*',
+        province: null,
+        ...(
+          before
+            ? { basedAt: { [Op.lt]: before } }
+            : {}
+        ),
+      },
+      order: literal('"basedAt" DESC'),
+      limit: 1,
+    });
+  }
 
   private static async checkExists(record: Partial<CDCInfo>) {
     const count = await this.count({
