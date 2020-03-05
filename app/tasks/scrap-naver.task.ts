@@ -10,9 +10,10 @@ export default async function scrapCDC() {
 
   const newsResults = await await scrap네이버뉴스();
   const latest = await CDCInfo.getSummary('대한민국');
+  console.info('newsResults', newsResults?.[0], 'latest', latest?.fatality);
   if (latest.fatality < newsResults?.[0].death && (newsResults?.[0].death - latest.fatality) < 500) {
     await latest.update('fatality', newsResults[0].death);
   }
 
-  console.info('cdc scrapper done');
+  console.info('naver scrapper done');
 }
