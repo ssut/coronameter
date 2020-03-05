@@ -22,10 +22,10 @@ async function main() {
       ScrapCDCTaskQueue.createJob({}).save();
     },
   });
-  // scrapJob.start();
-  // scrapCDCJob.start();
+  scrapJob.start();
+  scrapCDCJob.start();
 
-  // ScrapTaskQueue.createJob({}).save();
+  ScrapTaskQueue.createJob({}).save();
   ScrapCDCTaskQueue.createJob({}).save();
 }
 
