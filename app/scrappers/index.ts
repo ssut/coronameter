@@ -21,6 +21,7 @@ import 충청남도 from './chungnam';
 import 울산광역시 from './ulsan';
 import { Severity, withScope, captureEvent } from '@sentry/node';
 import 질병관리본부 from './cdc';
+import 네이버 from './naver';
 
 const logger = debug('scrappers');
 
@@ -100,6 +101,7 @@ export const scrapAll = async (concurrency = 5) => {
 
 export {
   질병관리본부 as scrap질병관리본부,
+  네이버 as scrap네이버,
 };
 
 if (require.main === module) {

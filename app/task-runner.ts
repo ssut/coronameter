@@ -1,4 +1,4 @@
-import { ScrapTaskQueue, ScrapCDCTaskQueue } from './queue';
+import { ScrapTaskQueue, ScrapCDCTaskQueue, scrapNaverTaskQueue } from './queue';
 import { redis, initialize } from './common';
 import * as tasks from './tasks';
 
@@ -9,6 +9,7 @@ async function main() {
 
   ScrapTaskQueue.process(tasks.scrap);
   ScrapCDCTaskQueue.process(tasks.scrapCDC);
+  scrapNaverTaskQueue.process(tasks.scrapNaver);
 
   const scrapJob = new CronJob({
     cronTime: '0,10,30,50 * * * *',
@@ -22,11 +23,19 @@ async function main() {
       ScrapCDCTaskQueue.createJob({}).save();
     },
   });
+  const scrapNaverJob = new CronJob({
+    cronTime: '1,2,5,7,11,13 10,16,17 * * *',
+    onTick() {
+      scrapNaverTaskQueue.createJob({}).save();
+    },
+  });
   scrapJob.start();
   scrapCDCJob.start();
+  scrapNaverJob.start();
 
   ScrapTaskQueue.createJob({}).save();
   ScrapCDCTaskQueue.createJob({}).save();
+  scrapNaverTaskQueue.createJob({}).save();
 }
 
 main();

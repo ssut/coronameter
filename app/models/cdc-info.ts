@@ -2,6 +2,7 @@ import { Model, DataTypes, Op, literal } from 'sequelize';
 import { sequelize } from '../database';
 import { ICoronaStats } from '../scrappers/interface';
 import scrapCDC from '../scrappers/cdc';
+import { scrap네이버 } from '../scrappers';
 
 type PromiseReturnType<T> = T extends () => Promise<infer U> ? U : T;
 
@@ -89,6 +90,41 @@ export class CDCInfo extends Model {
     });
 
     return count > 0;
+  }
+
+  public static async tryUpdateNaver(data: PromiseReturnType<typeof scrap네이버>) {
+    const {
+      확진환자: {
+        count: confirmed,
+      },
+      검사진행: {
+        count: testing,
+      },
+      격리해제: {
+        count: discharged,
+      },
+      사망자: {
+        count: fatality,
+      },
+      updatedAt,
+    } = data;
+
+    const record = {
+      type: CDCInfoType.Summary,
+      isLocal: true,
+      country: '대한민국',
+      province: '*',
+      confirmed,
+      testing,
+      discharged,
+      fatality,
+      basedAt: updatedAt.toJSDate(),
+    } as Partial<CDCInfo>;
+    if (await this.checkExists(record)) {
+      return;
+    }
+
+    await this.create(record);
   }
 
   public static async tryUpdate(data: PromiseReturnType<typeof scrapCDC>) {
