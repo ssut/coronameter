@@ -22,6 +22,7 @@ import 울산광역시 from './ulsan';
 import { Severity, withScope, captureEvent } from '@sentry/node';
 import 질병관리본부 from './cdc';
 import 네이버 from './naver';
+import 네이버뉴스 from './naver-news';
 
 const logger = debug('scrappers');
 
@@ -102,6 +103,7 @@ export const scrapAll = async (concurrency = 5) => {
 export {
   질병관리본부 as scrap질병관리본부,
   네이버 as scrap네이버,
+  네이버뉴스 as scrap네이버뉴스,
 };
 
 if (require.main === module) {
